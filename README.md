@@ -10,7 +10,7 @@
 # 基本使用
  - toml 配置
  
- 	```
+ 	```toml
 	debug = true
 	port = ":8081"
 	logFile = "conf/log.xml"
@@ -31,6 +31,7 @@
 			user = "123"
 			pawd = "123"
 			name = "123"
+ 	```
 
 - 使用方法
 
@@ -69,7 +70,7 @@
 		
 		time.Sleep(1000 * time.Second)
     }
-```
+	```
 
 # 进一步使用
  - 可以参考 parser interface，自定义其他类型的配置，如 ini、apollo（携程的开源产品）
