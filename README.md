@@ -9,10 +9,12 @@
 
 # 基本使用
  - toml 配置
+ 
+ 	```
 	debug = true
 	port = ":8081"
 	logFile = "conf/log.xml"
-	import = ["app-zhengfei"]
+	import = ["app-local"] // 同目录下的 app-loca.toml，按顺序读取
 
 	[gc]
 		percent = 100
@@ -29,7 +31,10 @@
 			user = "123"
 			pawd = "123"
 			name = "123"
+
 - 使用方法
+
+	```golang
     type AppConfig struct {
         Debug   bool
         Port    string
@@ -48,18 +53,23 @@
         }
     }
 
-    Default, _ := config.New(&AppConfig{}, parser.NewTomlParser(),
-        options.WithCfgFile(*cfg),
-        options.WithCheckInterval(1),
-        options.WithOnChangeFn(func(data interface{}) {
-            fmt.Println("change")
-            fmt.Printf("ret: %+v\n", data.(*AppConfig))
-        }),
-        options.WithOnErrorFn(func(err error) { fmt.Println("err", err) }),
-    )
-
-    fmt.Printf("ret: %+v\n", Default.Get().(*AppConfig))
-    fmt.Printf("ret: %+v\n", Default.Get().(*AppConfig).Db["slave"])
+	func main() {
+		Default, _ := config.New(&AppConfig{}, parser.NewTomlParser(),
+			options.WithCfgFile(*cfg),
+			options.WithCheckInterval(1),
+			options.WithOnChangeFn(func(data interface{}) { // 配置发生变化时触发
+				fmt.Println("change")
+				fmt.Printf("ret: %+v\n", data.(*AppConfig))
+			}),
+			options.WithOnErrorFn(func(err error) { fmt.Println("err", err) }), // 加载配置出现错误时触发
+		)
+		
+		fmt.Printf("ret: %+v\n", Default.Get().(*AppConfig))
+		fmt.Printf("ret: %+v\n", Default.Get().(*AppConfig).Db["slave"]))
+		
+		time.Sleep(1000 * time.Second)
+    }
+```
 
 # 进一步使用
  - 可以参考 parser interface，自定义其他类型的配置，如 ini、apollo（携程的开源产品）
