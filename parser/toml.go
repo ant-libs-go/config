@@ -65,7 +65,7 @@ type Import struct {
 }
 
 func (this *TomlParser) Unmarshal(cfg interface{}, opts *options.Options) (err error) {
-	files := []string{opts.File}
+	files := opts.Files
 
 	for len(files) > 0 {
 		file := files[len(files)-1]
@@ -113,7 +113,7 @@ func (this *TomlParser) load(cfg interface{}, file string) (err error) {
 }
 
 func (this *TomlParser) GetLastModTime(opts *options.Options) (r int64, err error) {
-	files := []string{opts.File}
+	files := opts.Files
 
 	for len(files) > 0 {
 		file := files[len(files)-1]

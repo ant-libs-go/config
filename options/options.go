@@ -8,7 +8,7 @@
 package options
 
 type Options struct {
-	File          string            // config main file
+	Files         []string          // config main file
 	CheckInterval int64             // file update check interval
 	OnChangeFn    func(interface{}) // call it when the file is modified
 	OnErrorFn     func(error)       // call it when an error occurs
@@ -18,7 +18,19 @@ type Option func(o *Options)
 
 func WithCfgFile(inp string) Option {
 	return func(o *Options) {
-		o.File = inp
+		if o.Files == nil {
+			o.Files = []string{}
+		}
+		o.Files = append(o.Files, inp)
+	}
+}
+
+func WithCfgFiles(inp ...string) Option {
+	return func(o *Options) {
+		if o.Files == nil {
+			o.Files = []string{}
+		}
+		o.Files = append(o.Files, inp...)
 	}
 }
 
