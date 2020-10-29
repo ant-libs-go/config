@@ -8,7 +8,6 @@
 package config
 
 import (
-	"fmt"
 	"reflect"
 	"sync"
 	"time"
@@ -126,23 +125,6 @@ func (this *Config) doError(err error) {
 		return
 	}
 	this.opts.OnErrorFn(err)
-}
-
-var Default *Config
-
-func Load(cfg interface{}, opts ...options.Option) (r *Config, err error) {
-	if Default == nil {
-		err = fmt.Errorf("instance was not initialized")
-		return
-	}
-	return Default.Load(cfg, opts...)
-}
-
-func Get(cfg interface{}) interface{} {
-	if Default == nil {
-		return nil
-	}
-	return Default.Get(cfg)
 }
 
 // vim: set noexpandtab ts=4 sts=4 sw=4 :
