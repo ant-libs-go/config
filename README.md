@@ -55,7 +55,7 @@
 
 	func main() {
 		Default := config.New(parser.NewTomlParser(),
-			options.WithCfgFile(*cfg),
+			options.WithCfgSource(*cfg),
 			options.WithCheckInterval(1),
 			options.WithOnChangeFn(func(data interface{}) { // 配置发生变化时触发
 				fmt.Println("change")

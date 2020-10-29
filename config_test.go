@@ -47,9 +47,9 @@ type MysqlConfig struct {
 }
 
 func TestBasic(t *testing.T) {
-	err := globalCfg.Load(&RedisConfig{}, options.WithOnChangeFn(func(cfg interface{}) { fmt.Println("redis===>", cfg.(*RedisConfig).Redis) }))
+	_, err := globalCfg.Load(&RedisConfig{}, options.WithOnChangeFn(func(cfg interface{}) { fmt.Println("redis===>", cfg.(*RedisConfig).Redis) }))
 	fmt.Println(err)
-	err = globalCfg.Load(&MysqlConfig{}, options.WithOnChangeFn(func(cfg interface{}) { fmt.Println("mysql===>", cfg.(*MysqlConfig).Mysql) }))
+	_, err = globalCfg.Load(&MysqlConfig{}, options.WithOnChangeFn(func(cfg interface{}) { fmt.Println("mysql===>", cfg.(*MysqlConfig).Mysql) }))
 	fmt.Println(err)
 	fmt.Println(globalCfg.Get(&RedisConfig{}).(*RedisConfig).Redis)
 	fmt.Println(globalCfg.Get(&MysqlConfig{}).(*MysqlConfig).Mysql)
