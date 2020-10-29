@@ -8,6 +8,7 @@
 package config
 
 import (
+	"fmt"
 	"reflect"
 	"sync"
 	"time"
@@ -15,8 +16,6 @@ import (
 	"github.com/ant-libs-go/config/options"
 	"github.com/ant-libs-go/config/parser"
 )
-
-var lock sync.RWMutex
 
 type item struct {
 	cfg  interface{}
@@ -28,6 +27,11 @@ type Config struct {
 	m      map[string]*item
 	opts   *options.Options
 	parser parser.Parser
+}
+
+func NewAndSetInstance(parser parser.Parser, opts ...options.Option) (r *Config) {
+	Default = New(parser, opts...)
+	return Default
 }
 
 func New(parser parser.Parser, opts ...options.Option) (r *Config) {
@@ -45,7 +49,7 @@ func New(parser parser.Parser, opts ...options.Option) (r *Config) {
 		opts:   options,
 		parser: parser,
 	}
-	go r.ChangeChecker()
+	go r.changeChecker()
 	return
 }
 
@@ -85,7 +89,7 @@ func (this *Config) load(item *item) (err error) {
 	return
 }
 
-func (this *Config) ChangeChecker() {
+func (this *Config) changeChecker() {
 	var err error
 	ticker := time.NewTicker(time.Second * time.Duration(this.opts.CheckInterval))
 	for _ = range ticker.C {
@@ -110,9 +114,12 @@ func (this *Config) ChangeChecker() {
 }
 
 func (this *Config) Get(cfg interface{}) interface{} {
-	lock.RLock()
-	defer lock.RUnlock()
-	return this.m[reflect.TypeOf(cfg).String()].cfg
+	this.lock.RLock()
+	defer this.lock.RUnlock()
+	if v, ok := this.m[reflect.TypeOf(cfg).String()]; ok {
+		return v.cfg
+	}
+	return nil
 }
 
 func (this *Config) doError(err error) {
@@ -120,6 +127,23 @@ func (this *Config) doError(err error) {
 		return
 	}
 	this.opts.OnErrorFn(err)
+}
+
+var Default *Config
+
+func Load(cfg interface{}, opts ...options.Option) (r *Config, err error) {
+	if Default == nil {
+		err = fmt.Errorf("instance was not initialized")
+		return
+	}
+	return Default.Load(cfg, opts...)
+}
+
+func Get(cfg interface{}) interface{} {
+	if Default == nil {
+		return nil
+	}
+	return Default.Get(cfg)
 }
 
 // vim: set noexpandtab ts=4 sts=4 sw=4 :
