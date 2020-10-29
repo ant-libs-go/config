@@ -49,7 +49,7 @@ func New(parser parser.Parser, opts ...options.Option) (r *Config) {
 	return
 }
 
-func (this *Config) Load(cfg interface{}, opts ...options.Option) (err error) {
+func (this *Config) Load(cfg interface{}, opts ...options.Option) (r *Config, err error) {
 	name := reflect.TypeOf(cfg).String()
 	options := &options.Options{
 		Sources:    this.opts.Sources,
@@ -63,6 +63,8 @@ func (this *Config) Load(cfg interface{}, opts ...options.Option) (err error) {
 	this.m[name] = &item{cfg: cfg, opts: options}
 	err = this.load(this.m[name])
 	this.lock.Unlock()
+
+	r = this
 	return
 }
 
