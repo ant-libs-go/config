@@ -54,7 +54,7 @@
     }
 
 	func main() {
-		Default, _ := config.New(&AppConfig{}, parser.NewTomlParser(),
+		Default := config.New(parser.NewTomlParser(),
 			options.WithCfgFile(*cfg),
 			options.WithCheckInterval(1),
 			options.WithOnChangeFn(func(data interface{}) { // 配置发生变化时触发
@@ -63,9 +63,14 @@
 			}),
 			options.WithOnErrorFn(func(err error) { fmt.Println("err", err) }), // 加载配置出现错误时触发
 		)
+
+		err := Default.Load(&RedisConfig{}, 
+			options.WithOnChangeFn(func(cfg interface{}) {
+				fmt.Println("redis===>", cfg.(*RedisConfig).Redis) 
+			}))
 		
-		fmt.Printf("ret: %+v\n", Default.Get().(*AppConfig))
-		fmt.Printf("ret: %+v\n", Default.Get().(*AppConfig).Db["slave"]))
+		fmt.Printf("ret: %+v\n", Default.Get(&AppConfig{}).(*AppConfig))
+		fmt.Printf("ret: %+v\n", Default.Get(&AppConfig{}).(*AppConfig).Db["slave"]))
 		
 		time.Sleep(1000 * time.Second)
     }
