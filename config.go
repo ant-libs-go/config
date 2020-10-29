@@ -29,11 +29,6 @@ type Config struct {
 	parser parser.Parser
 }
 
-func NewAndSetInstance(parser parser.Parser, opts ...options.Option) (r *Config) {
-	Default = New(parser, opts...)
-	return Default
-}
-
 func New(parser parser.Parser, opts ...options.Option) (r *Config) {
 	options := &options.Options{
 		CheckInterval: 10,
@@ -50,6 +45,10 @@ func New(parser parser.Parser, opts ...options.Option) (r *Config) {
 		parser: parser,
 	}
 	go r.changeChecker()
+
+	if Default == nil {
+		Default = r
+	}
 	return
 }
 
