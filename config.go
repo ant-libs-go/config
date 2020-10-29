@@ -8,27 +8,32 @@
 package config
 
 import (
+	"reflect"
 	"sync"
 	"time"
 
 	"github.com/ant-libs-go/config/options"
 	"github.com/ant-libs-go/config/parser"
-	"github.com/ant-libs-go/util"
 )
 
 var lock sync.RWMutex
 
+type item struct {
+	cfg  interface{}
+	opts *options.Options
+}
+
 type Config struct {
-	cfg    interface{}
-	rawCfg interface{}
+	lock   sync.RWMutex
+	m      map[string]*item
 	opts   *options.Options
 	parser parser.Parser
 }
 
-func New(cfg interface{}, parser parser.Parser, opts ...options.Option) (r *Config, err error) {
+func New(parser parser.Parser, opts ...options.Option) (r *Config) {
 	options := &options.Options{
 		CheckInterval: 10,
-		OnChangeFn:    func(interface{}) {},
+		OnChangeFn:    func(cfg interface{}) {},
 		OnErrorFn:     func(error) {},
 	}
 	for _, opt := range opts {
@@ -36,27 +41,45 @@ func New(cfg interface{}, parser parser.Parser, opts ...options.Option) (r *Conf
 	}
 
 	r = &Config{
-		rawCfg: cfg,
+		m:      map[string]*item{},
 		opts:   options,
 		parser: parser,
 	}
-	r.onError(r.Load())
 	go r.ChangeChecker()
 	return
 }
 
-func (this *Config) Load() (err error) {
-	cfg := this.rawCfg
-	util.DeepCopy(this.rawCfg, this.rawCfg)
+func (this *Config) Load(cfg interface{}, opts ...options.Option) (err error) {
+	name := reflect.TypeOf(cfg).String()
+	options := &options.Options{
+		Sources:    this.opts.Sources,
+		OnChangeFn: this.opts.OnChangeFn,
+	}
+	for _, opt := range opts {
+		opt(options)
+	}
 
-	err = this.parser.Unmarshal(cfg, this.opts)
+	this.lock.Lock()
+	this.m[name] = &item{cfg: cfg, opts: options}
+	err = this.load(this.m[name])
+	this.lock.Unlock()
+	return
+}
+
+// must be locked at call the func
+func (this *Config) load(item *item) (err error) {
+	ty := reflect.TypeOf(item.cfg)
+	if ty.Kind() == reflect.Ptr {
+		ty = ty.Elem()
+	}
+	item.cfg = reflect.New(ty).Interface()
+
+	err = this.parser.Unmarshal(item.cfg, item.opts)
 	if err != nil {
 		return
 	}
 
-	lock.Lock()
-	defer lock.Unlock()
-	this.cfg = cfg
+	item.opts.OnChangeFn(item.cfg)
 	return
 }
 
@@ -67,33 +90,30 @@ func (this *Config) ChangeChecker() {
 		var lastModTime int64
 		lastModTime, err = this.parser.GetLastModTime(this.opts)
 		if err != nil {
-			this.onError(err)
+			this.doError(err)
 			continue
 		}
 
-		if time.Now().Unix()-lastModTime <= this.opts.CheckInterval {
-			this.onChange()
+		if time.Now().Unix()-lastModTime > this.opts.CheckInterval {
+			continue
 		}
+
+		this.lock.Lock()
+		for _, item := range this.m {
+			this.doError(this.load(item))
+		}
+		this.lock.Unlock()
 	}
 	return
 }
 
-func (this *Config) Get() interface{} {
+func (this *Config) Get(cfg interface{}) interface{} {
 	lock.RLock()
 	defer lock.RUnlock()
-	return this.cfg
+	return this.m[reflect.TypeOf(cfg).String()].cfg
 }
 
-func (this *Config) onChange() {
-	err := this.Load()
-	if err != nil {
-		this.onError(err)
-		return
-	}
-	this.opts.OnChangeFn(this.Get())
-}
-
-func (this *Config) onError(err error) {
+func (this *Config) doError(err error) {
 	if err == nil {
 		return
 	}
