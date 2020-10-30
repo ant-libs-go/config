@@ -14,6 +14,7 @@ import (
 
 	"github.com/ant-libs-go/config/options"
 	"github.com/ant-libs-go/config/parser"
+	"github.com/ant-libs-go/util"
 )
 
 type item struct {
@@ -28,7 +29,7 @@ type Config struct {
 	parser parser.Parser
 }
 
-func New(parser parser.Parser, opts ...options.Option) (r *Config) {
+func NewConfig(parser parser.Parser, opts ...options.Option) (r *Config) {
 	options := &options.Options{
 		CheckInterval: 10,
 		OnChangeFn:    func(cfg interface{}) {},
@@ -44,10 +45,6 @@ func New(parser parser.Parser, opts ...options.Option) (r *Config) {
 		parser: parser,
 	}
 	go r.changeChecker()
-
-	if Default == nil {
-		Default = r
-	}
 	return
 }
 
@@ -115,6 +112,7 @@ func (this *Config) Get(cfg interface{}) interface{} {
 	this.lock.RLock()
 	defer this.lock.RUnlock()
 	if v, ok := this.m[reflect.TypeOf(cfg).String()]; ok {
+		util.DeepCopy(cfg, v.cfg)
 		return v.cfg
 	}
 	return nil

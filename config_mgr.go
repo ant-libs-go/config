@@ -11,9 +11,18 @@ import (
 	"fmt"
 
 	"github.com/ant-libs-go/config/options"
+	"github.com/ant-libs-go/config/parser"
 )
 
 var Default *Config
+
+func New(parser parser.Parser, opts ...options.Option) (r *Config) {
+	r = NewConfig(parser, opts...)
+	if Default == nil {
+		Default = r
+	}
+	return
+}
 
 func Load(cfg interface{}, opts ...options.Option) (r *Config, err error) {
 	if Default == nil {
