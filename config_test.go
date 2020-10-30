@@ -52,7 +52,9 @@ func TestBasic(t *testing.T) {
 	_, err = globalCfg.Load(&MysqlConfig{}, options.WithOnChangeFn(func(cfg interface{}) { fmt.Println("mysql===>", cfg.(*MysqlConfig).Mysql) }))
 	fmt.Println(err)
 	fmt.Println(globalCfg.Get(&RedisConfig{}).(*RedisConfig).Redis)
-	fmt.Println(globalCfg.Get(&MysqlConfig{}).(*MysqlConfig).Mysql)
+	cfg := &MysqlConfig{}
+	fmt.Println(globalCfg.Get(cfg).(*MysqlConfig).Mysql)
+	fmt.Println("-->", cfg, cfg.Mysql)
 	time.Sleep(100 * time.Second)
 
 	Convey("TestBasic", t, func() {
