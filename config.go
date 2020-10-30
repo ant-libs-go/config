@@ -31,9 +31,8 @@ type Config struct {
 
 func NewConfig(parser parser.Parser, opts ...options.Option) (r *Config) {
 	options := &options.Options{
-		CheckInterval: 10,
-		OnChangeFn:    func(cfg interface{}) {},
-		OnErrorFn:     func(error) {},
+		OnChangeFn: func(cfg interface{}) {},
+		OnErrorFn:  func(error) {},
 	}
 	for _, opt := range opts {
 		opt(options)
@@ -85,6 +84,10 @@ func (this *Config) load(item *item) (err error) {
 }
 
 func (this *Config) changeChecker() {
+	if this.opts.CheckInterval == 0 {
+		return
+	}
+
 	var err error
 	ticker := time.NewTicker(time.Second * time.Duration(this.opts.CheckInterval))
 	for _ = range ticker.C {
