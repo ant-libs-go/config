@@ -14,7 +14,6 @@ import (
 
 	"github.com/ant-libs-go/config/options"
 	"github.com/ant-libs-go/config/parser"
-	"github.com/ant-libs-go/util"
 )
 
 type item struct {
@@ -115,7 +114,6 @@ func (this *Config) Get(cfg interface{}) interface{} {
 	this.lock.RLock()
 	defer this.lock.RUnlock()
 	if v, ok := this.m[reflect.TypeOf(cfg).String()]; ok {
-		util.DeepCopy(cfg, v.cfg)
 		return v.cfg
 	}
 	return nil
