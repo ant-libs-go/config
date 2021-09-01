@@ -14,72 +14,40 @@ import (
 
 	"github.com/ant-libs-go/config/options"
 	"github.com/ant-libs-go/config/parser"
+	"github.com/ant-libs-go/util"
 )
 
+var Instance *Config
+
 type item struct {
-	cfg  interface{}
-	opts *options.Options
+	m    interface{}
+	hash string
+	elem reflect.Value
 }
 
 type Config struct {
 	lock   sync.RWMutex
-	m      map[string]*item
 	opts   *options.Options
+	items  map[string]*item
 	parser parser.Parser
 }
 
 func NewConfig(parser parser.Parser, opts ...options.Option) (r *Config) {
 	options := &options.Options{
 		OnChangeFn: func(cfg interface{}) {},
-		OnErrorFn:  func(error) {},
-	}
+		OnErrorFn:  func(error) {}}
 	for _, opt := range opts {
 		opt(options)
 	}
 
-	r = &Config{
-		m:      map[string]*item{},
+	Instance = &Config{
 		opts:   options,
-		parser: parser,
-	}
-	go r.changeChecker()
-	return
-}
+		items:  map[string]*item{},
+		parser: parser}
 
-func (this *Config) Load(cfg interface{}, opts ...options.Option) (r *Config, err error) {
-	name := reflect.TypeOf(cfg).String()
-	options := &options.Options{
-		Sources:    this.opts.Sources,
-		OnChangeFn: this.opts.OnChangeFn,
-	}
-	for _, opt := range opts {
-		opt(options)
-	}
+	go Instance.changeChecker()
 
-	this.lock.Lock()
-	this.m[name] = &item{cfg: cfg, opts: options}
-	err = this.load(this.m[name])
-	this.lock.Unlock()
-
-	r = this
-	return
-}
-
-// must be locked at call the func
-func (this *Config) load(item *item) (err error) {
-	ty := reflect.TypeOf(item.cfg)
-	if ty.Kind() == reflect.Ptr {
-		ty = ty.Elem()
-	}
-	item.cfg = reflect.New(ty).Interface()
-
-	err = this.parser.Unmarshal(item.cfg, item.opts)
-	if err != nil {
-		return
-	}
-
-	item.opts.OnChangeFn(item.cfg)
-	return
+	return Instance
 }
 
 func (this *Config) changeChecker() {
@@ -102,21 +70,25 @@ func (this *Config) changeChecker() {
 		}
 
 		this.lock.Lock()
-		for _, item := range this.m {
-			this.doError(this.load(item))
+		for pointer, one := range this.items {
+			if err := this.parser.Unmarshal(one.m, this.opts); err != nil {
+				this.doError(err)
+				continue
+			}
+
+			b, _ := util.GobEncode(one.m)
+			this.items[pointer] = &item{
+				m:    one.m,
+				hash: util.Md5String(string(b)),
+				elem: reflect.ValueOf(one.m).Elem()}
+
+			if one.hash != this.items[pointer].hash {
+				Instance.opts.OnChangeFn(this.items[pointer].m)
+			}
 		}
 		this.lock.Unlock()
 	}
 	return
-}
-
-func (this *Config) Get(cfg interface{}) interface{} {
-	this.lock.RLock()
-	defer this.lock.RUnlock()
-	if v, ok := this.m[reflect.TypeOf(cfg).String()]; ok {
-		return v.cfg
-	}
-	return nil
 }
 
 func (this *Config) doError(err error) {
@@ -124,6 +96,30 @@ func (this *Config) doError(err error) {
 		return
 	}
 	this.opts.OnErrorFn(err)
+}
+
+func Get(cfg interface{}) interface{} {
+	Instance.lock.Lock()
+	defer Instance.lock.Unlock()
+
+	pointer := reflect.TypeOf(cfg).String()
+	if _, ok := Instance.items[pointer]; !ok {
+		if err := Instance.parser.Unmarshal(cfg, Instance.opts); err != nil {
+			Instance.doError(err)
+			return nil
+		}
+
+		b, _ := util.GobEncode(cfg)
+		Instance.items[pointer] = &item{
+			m:    cfg,
+			hash: util.Md5String(string(b)),
+			elem: reflect.ValueOf(cfg).Elem()}
+	}
+
+	if v := Instance.items[pointer]; v != nil {
+		reflect.ValueOf(cfg).Elem().Set(v.elem)
+	}
+	return cfg
 }
 
 // vim: set noexpandtab ts=4 sts=4 sw=4 :

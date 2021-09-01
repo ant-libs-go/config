@@ -9,37 +9,20 @@ package parser
 
 import (
 	"fmt"
-	"os"
 	"path"
 
 	"github.com/BurntSushi/toml"
 	"github.com/ant-libs-go/config/options"
 )
 
-type TomlParser struct{}
-
-func NewTomlParser() *TomlParser {
-	return &TomlParser{}
-}
-
 type Import struct {
 	Import []string
 }
 
-func (this *TomlParser) parseSource(opts *options.Options) (r []string, err error) {
-	r = []string{}
-	r = append(r, opts.Sources...)
+type TomlParser struct{}
 
-	for _, source := range r {
-		imp := &Import{}
-		if err = this.load(imp, source); err != nil {
-			return
-		}
-		for _, v := range imp.Import {
-			r = append(r, path.Join(path.Dir(source), v+".toml"))
-		}
-	}
-	return
+func NewTomlParser() *TomlParser {
+	return &TomlParser{}
 }
 
 func (this *TomlParser) Unmarshal(cfg interface{}, opts *options.Options) (err error) {
@@ -48,22 +31,9 @@ func (this *TomlParser) Unmarshal(cfg interface{}, opts *options.Options) (err e
 		return
 	}
 	for _, source := range sources {
-		if err = this.load(cfg, source); err != nil {
+		if err = this.decode(cfg, source); err != nil {
 			return
 		}
-	}
-	return
-}
-
-func (this *TomlParser) load(cfg interface{}, source string) (err error) {
-	if len(source) == 0 {
-		err = fmt.Errorf("config source not specified")
-		return
-	}
-	_, err = toml.DecodeFile(source, cfg)
-	if err != nil {
-		err = fmt.Errorf("config source unmarshal fail, %s", err)
-		return
 	}
 	return
 }
@@ -75,7 +45,7 @@ func (this *TomlParser) GetLastModTime(opts *options.Options) (r int64, err erro
 	}
 	for _, source := range sources {
 		var modTime int64
-		if modTime, err = this.getLastModTime(source); err != nil {
+		if modTime, err = ParseFileLastModTime(source); err != nil {
 			return
 		}
 		if modTime > r {
@@ -85,13 +55,31 @@ func (this *TomlParser) GetLastModTime(opts *options.Options) (r int64, err erro
 	return
 }
 
-func (this *TomlParser) getLastModTime(source string) (r int64, err error) {
-	fd, err := os.Stat(source)
-	if err != nil {
-		err = fmt.Errorf("get source last modified time fail, %s", err)
+func (this *TomlParser) parseSource(opts *options.Options) (r []string, err error) {
+	r = []string{}
+	r = append(r, opts.Sources...)
+
+	for _, source := range r {
+		t := &Import{}
+		if err = this.decode(t, source); err != nil {
+			return
+		}
+		for _, v := range t.Import {
+			r = append(r, path.Join(path.Dir(source), v+".toml"))
+		}
+	}
+	return
+}
+
+func (this *TomlParser) decode(cfg interface{}, source string) (err error) {
+	if len(source) == 0 {
+		err = fmt.Errorf("config source not specified")
 		return
 	}
-	r = fd.ModTime().Unix()
+	if _, err = toml.DecodeFile(source, cfg); err != nil {
+		err = fmt.Errorf("config source decode fail, %s", err)
+		return
+	}
 	return
 }
 
