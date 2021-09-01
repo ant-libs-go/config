@@ -16,7 +16,6 @@ type Options struct {
 
 type Option func(o *Options)
 
-// valid only on new or load
 func WithCfgSource(inp ...string) Option {
 	return func(o *Options) {
 		if o.Sources == nil {
@@ -26,21 +25,18 @@ func WithCfgSource(inp ...string) Option {
 	}
 }
 
-// valid only on new
 func WithCheckInterval(inp int64) Option {
 	return func(o *Options) {
 		o.CheckInterval = inp
 	}
 }
 
-// valid only on new
 func WithOnErrorFn(inp func(error)) Option {
 	return func(o *Options) {
 		o.OnErrorFn = inp
 	}
 }
 
-// valid only on new or load
 func WithOnChangeFn(inp func(cfg interface{})) Option {
 	return func(o *Options) {
 		o.OnChangeFn = inp
