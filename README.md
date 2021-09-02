@@ -22,8 +22,9 @@
     [redis.default]
         addr = "127.0.0.1:6379"
         pawd = "123456"
+    ```
 
-- 使用方法
+ - 使用方法
 
 	```golang
     type MysqlConfig struct {
@@ -58,4 +59,4 @@
 		
 		time.Sleep(1 * time.Hour)
     }
-```
+    ```
