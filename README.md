@@ -10,8 +10,8 @@
 # 基本使用
  - toml 配置
  
- 	```
-	import = ["app-local"] // 同目录下的 app-loca.toml，按顺序读取
+     ```
+    import = ["app-local"] // 同目录下的 app-loca.toml，按顺序读取
 
     [mysql.default]
         user = "root"
@@ -26,7 +26,7 @@
 
  - 使用方法
 
-	```golang
+    ```golang
     type MysqlConfig struct {
         Cfgs map[string]*struct {
             DialUser string `toml:"user"`
@@ -37,26 +37,26 @@
         } `toml:"mysql"`
     }
 
-	func main() {
-		config.New(parser.NewTomlParser(),
-			options.WithCfgSource("./test/toml_test.toml"),
-			options.WithCheckInterval(10),
-			options.WithOnChangeFn(func(data interface{}) { // 配置发生变化时触发
+    func main() {
+        config.New(parser.NewTomlParser(),
+            options.WithCfgSource("./test/toml_test.toml"),
+            options.WithCheckInterval(10),
+            options.WithOnChangeFn(func(data interface{}) { // 配置发生变化时触发
                 fmt.Println("change.....")
                 switch v := cfg.(type) {
                 case *RedisConfig:
-					fmt.Println("change redis: ", v.Cfgs["default"])
-				case *MysqlConfig:
-					fmt.Println("change mysql: ", v.Cfgs["default"])
+                    fmt.Println("change redis: ", v.Cfgs["default"])
+                case *MysqlConfig:
+                    fmt.Println("change mysql: ", v.Cfgs["default"])
                 }
-			}),
-			options.WithOnErrorFn(func(err error) { // 加载配置出现错误时触发
+            }),
+            options.WithOnErrorFn(func(err error) { // 加载配置出现错误时触发
                 fmt.Println("err", err)
             }))
 
-		fmt.Printf("ret: %+v\n", config.Get(&RedisConfig{}).(*RedisConfig))
-		fmt.Printf("ret: %+v\n", config.Get(&RedisConfig{}).(*RedisConfig).Cfgs["default"]))
-		
-		time.Sleep(1 * time.Hour)
+        fmt.Printf("ret: %+v\n", config.Get(&RedisConfig{}).(*RedisConfig))
+        fmt.Printf("ret: %+v\n", config.Get(&RedisConfig{}).(*RedisConfig).Cfgs["default"]))
+        
+        time.Sleep(1 * time.Hour)
     }
     ```
