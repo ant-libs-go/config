@@ -5,7 +5,7 @@
  - 针对 toml 格式配置文件，支持 import 关键字，可以引入其他 toml 文件
  - 支持定时检测配置文件更新状态，完成 reload 之后发起回调通知
  - 支持配置文件加载失败时的回调通知
- - 当前仅支持本地 toml 格式配置文件，如需ini、yaml、apollo等配置格式可按协议进行实现
+ - 当前支持本地 toml 格式、Apollo toml 配置方案，如需ini、yaml等配置格式可按协议进行实现
 
 # 基本使用
  - toml 配置
@@ -39,15 +39,15 @@
 
 	func main() {
 		config.New(parser.NewTomlParser(),
-			options.WithCfgSource("./test.toml"),
-			options.WithCheckInterval(1),
+			options.WithCfgSource("./test/toml_test.toml"),
+			options.WithCheckInterval(10),
 			options.WithOnChangeFn(func(data interface{}) { // 配置发生变化时触发
                 fmt.Println("change.....")
                 switch v := cfg.(type) {
                 case *RedisConfig:
-                    fmt.Println(cfg.(*RedisConfig).Cfgs["default"])
-                case *MysqlConfig:
-                    fmt.Println(cfg.(*MysqlConfig).Cfgs["default"])
+					fmt.Println("change redis: ", v.Cfgs["default"])
+				case *MysqlConfig:
+					fmt.Println("change mysql: ", v.Cfgs["default"])
                 }
 			}),
 			options.WithOnErrorFn(func(err error) { // 加载配置出现错误时触发
