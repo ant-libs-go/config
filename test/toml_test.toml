@@ -1,4 +1,4 @@
-import = ["sub"]
+import = ["toml_test_sub"]
 
 [mysql.default]
     user = "root"

@@ -15,7 +15,7 @@ import (
 	"github.com/ant-libs-go/config/options"
 )
 
-type Import struct {
+type TomlImport struct {
 	Import []string
 }
 
@@ -60,7 +60,7 @@ func (this *TomlParser) parseSource(opts *options.Options) (r []string, err erro
 	r = append(r, opts.Sources...)
 
 	for _, source := range r {
-		t := &Import{}
+		t := &TomlImport{}
 		if err = this.decode(t, source); err != nil {
 			return
 		}

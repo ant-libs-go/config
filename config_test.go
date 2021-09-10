@@ -17,22 +17,43 @@ import (
 	"github.com/ant-libs-go/config/parser"
 )
 
+const TEST_PARSER = "toml_apollo" // toml / toml_apollo
+
 func TestMain(m *testing.M) {
-	NewConfig(parser.NewTomlParser(),
-		options.WithCfgSource("./test.toml"),
-		options.WithCheckInterval(1),
-		options.WithOnChangeFn(func(cfg interface{}) {
-			fmt.Println("change.....")
-			switch v := cfg.(type) {
-			case *RedisConfig:
-				fmt.Println(cfg.(*RedisConfig).Cfgs["default"])
-			case *MysqlConfig:
-				fmt.Println(cfg.(*MysqlConfig).Cfgs["default"])
-			}
-		}),
-		options.WithOnErrorFn(func(e error) {
-			fmt.Println("error: ", e)
-		}))
+	switch TEST_PARSER {
+	case "toml":
+		NewConfig(parser.NewTomlParser(),
+			options.WithCfgSource("./test/toml_test.toml"),
+			options.WithCheckInterval(10),
+			options.WithOnChangeFn(func(cfg interface{}) {
+				fmt.Println("change.....")
+				switch v := cfg.(type) {
+				case *RedisConfig:
+					fmt.Println("change redis: ", v.Cfgs["default"])
+				case *MysqlConfig:
+					fmt.Println("change mysql: ", v.Cfgs["default"])
+				}
+			}),
+			options.WithOnErrorFn(func(e error) {
+				fmt.Println("error: ", e)
+			}))
+	case "toml_apollo":
+		NewConfig(parser.NewTomlApolloParser(),
+			options.WithCfgSource("./test/toml_apollo_test.toml"),
+			options.WithCheckInterval(10),
+			options.WithOnChangeFn(func(cfg interface{}) {
+				fmt.Println("change.....")
+				switch v := cfg.(type) {
+				case *RedisConfig:
+					fmt.Println("change redis: ", v.Cfgs["default"])
+				case *MysqlConfig:
+					fmt.Println("change mysql: ", v.Cfgs["default"])
+				}
+			}),
+			options.WithOnErrorFn(func(e error) {
+				fmt.Println("error: ", e)
+			}))
+	}
 	os.Exit(m.Run())
 }
 
@@ -55,7 +76,7 @@ type MysqlConfig struct {
 
 func TestBasic(t *testing.T) {
 	cfg := &RedisConfig{}
-	fmt.Println(Get(cfg).(*RedisConfig).Cfgs["default"])
-	fmt.Println(Get(&MysqlConfig{}).(*MysqlConfig).Cfgs["default"])
+	fmt.Println("redis: ", Get(cfg).(*RedisConfig).Cfgs["default"])
+	fmt.Println("mysql: ", Get(&MysqlConfig{}).(*MysqlConfig).Cfgs["default"])
 	time.Sleep(1 * time.Hour)
 }
