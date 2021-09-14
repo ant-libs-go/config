@@ -43,4 +43,23 @@ func WithOnChangeFn(inp func(cfg interface{})) Option {
 	}
 }
 
+type OpOptions struct {
+	OnChangeFn func(interface{}) // call it when the file is modified
+	OnErrorFn  func(error)       // call it when an error occurs
+}
+
+type OpOption func(o *OpOptions)
+
+func WithOpOnErrorFn(inp func(error)) OpOption {
+	return func(o *OpOptions) {
+		o.OnErrorFn = inp
+	}
+}
+
+func WithOpOnChangeFn(inp func(cfg interface{})) OpOption {
+	return func(o *OpOptions) {
+		o.OnChangeFn = inp
+	}
+}
+
 // vim: set noexpandtab ts=4 sts=4 sw=4 :

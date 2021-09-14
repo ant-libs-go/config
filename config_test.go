@@ -76,7 +76,10 @@ type MysqlConfig struct {
 
 func TestBasic(t *testing.T) {
 	cfg := &RedisConfig{}
-	fmt.Println("redis: ", Get(cfg).(*RedisConfig).Cfgs["default"])
+	fmt.Println("redis: ", Get(cfg, options.WithOpOnChangeFn(func(cfg interface{}) {
+		fmt.Println("------change")
+		fmt.Println(cfg)
+	})).(*RedisConfig).Cfgs["default"])
 	fmt.Println("mysql: ", Get(&MysqlConfig{}).(*MysqlConfig).Cfgs["default"])
 	time.Sleep(1 * time.Hour)
 }

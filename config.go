@@ -20,9 +20,11 @@ import (
 var Instance *Config
 
 type item struct {
-	m    interface{}
-	hash string
-	elem reflect.Value
+	m          interface{}
+	hash       string
+	elem       reflect.Value
+	onChangeFn func(interface{})
+	onErrorFn  func(error)
 }
 
 type Config struct {
@@ -61,7 +63,7 @@ func (this *Config) changeChecker() {
 		var lastModTime int64
 		lastModTime, err = this.parser.GetLastModTime(this.opts)
 		if err != nil {
-			this.doError(err)
+			this.doError(err, "")
 			continue
 		}
 
@@ -72,18 +74,20 @@ func (this *Config) changeChecker() {
 		this.lock.Lock()
 		for pointer, one := range this.items {
 			if err := this.parser.Unmarshal(one.m, this.opts); err != nil {
-				this.doError(err)
+				this.doError(err, pointer)
 				continue
 			}
 
-			b, _ := util.GobEncode(one.m)
-			this.items[pointer] = &item{
-				m:    one.m,
-				hash: util.Md5String(string(b)),
-				elem: reflect.ValueOf(one.m).Elem()}
+			oldHash := one.hash
 
-			if one.hash != this.items[pointer].hash {
-				Instance.opts.OnChangeFn(this.items[pointer].m)
+			b, _ := util.GobEncode(one.m)
+			this.items[pointer].m = one.m
+			this.items[pointer].hash = util.Md5String(string(b))
+			this.items[pointer].elem = reflect.ValueOf(one.m).Elem()
+
+			if oldHash != this.items[pointer].hash {
+				this.opts.OnChangeFn(this.items[pointer].m)
+				this.items[pointer].onChangeFn(this.items[pointer].m)
 			}
 		}
 		this.lock.Unlock()
@@ -91,29 +95,43 @@ func (this *Config) changeChecker() {
 	return
 }
 
-func (this *Config) doError(err error) {
+func (this *Config) doError(err error, pointer string) {
 	if err == nil {
 		return
 	}
 	this.opts.OnErrorFn(err)
+
+	if _, ok := this.items[pointer]; ok {
+		this.items[pointer].onErrorFn(err)
+	}
 }
 
-func Get(cfg interface{}) interface{} {
+func Get(cfg interface{}, opts ...options.OpOption) interface{} {
 	Instance.lock.Lock()
 	defer Instance.lock.Unlock()
 
 	pointer := reflect.TypeOf(cfg).String()
 	if _, ok := Instance.items[pointer]; !ok {
+		options := &options.OpOptions{
+			OnChangeFn: func(cfg interface{}) {},
+			OnErrorFn:  func(error) {}}
+		for _, opt := range opts {
+			opt(options)
+		}
+
+		Instance.items[pointer] = &item{
+			onChangeFn: options.OnChangeFn,
+			onErrorFn:  options.OnErrorFn}
+
 		if err := Instance.parser.Unmarshal(cfg, Instance.opts); err != nil {
-			Instance.doError(err)
+			Instance.doError(err, pointer)
 			return nil
 		}
 
 		b, _ := util.GobEncode(cfg)
-		Instance.items[pointer] = &item{
-			m:    cfg,
-			hash: util.Md5String(string(b)),
-			elem: reflect.ValueOf(cfg).Elem()}
+		Instance.items[pointer].m = cfg
+		Instance.items[pointer].hash = util.Md5String(string(b))
+		Instance.items[pointer].elem = reflect.ValueOf(cfg).Elem()
 	}
 
 	if v := Instance.items[pointer]; v != nil {
