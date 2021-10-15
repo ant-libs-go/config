@@ -11,7 +11,7 @@
 * 针对 toml 格式配置文件，支持 import 关键字，可以引入其他 toml 文件
 * 支持定时检测配置文件更新状态，完成 reload 之后发起回调通知
 * 支持配置文件加载失败时的回调通知
-* 当前支持本地 toml 格式、Apollo toml 配置方案，如需ini、yaml等配置格式可按协议进行实现
+* 当前支持本地 toml 格式、Apollo toml、Nacos toml 配置方案，如需ini、yaml等配置格式可按协议进行实现
 
 ## 安装
 
