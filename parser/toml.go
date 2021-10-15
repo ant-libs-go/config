@@ -15,14 +15,13 @@ import (
 	"github.com/ant-libs-go/config/options"
 )
 
-type TomlImport struct {
-	Import []string
+type TomlParser struct {
+	modTime int64
 }
 
-type TomlParser struct{}
-
 func NewTomlParser() *TomlParser {
-	return &TomlParser{}
+	o := &TomlParser{}
+	return o
 }
 
 func (this *TomlParser) Unmarshal(cfg interface{}, opts *options.Options) (err error) {
@@ -30,6 +29,7 @@ func (this *TomlParser) Unmarshal(cfg interface{}, opts *options.Options) (err e
 	if sources, err = this.parseSource(opts); err != nil {
 		return
 	}
+
 	for _, source := range sources {
 		if err = this.decode(cfg, source); err != nil {
 			return
@@ -43,30 +43,35 @@ func (this *TomlParser) GetLastModTime(opts *options.Options) (r int64, err erro
 	if sources, err = this.parseSource(opts); err != nil {
 		return
 	}
+
 	for _, source := range sources {
+		if IsLocalFile(source) == false {
+			continue
+		}
 		var modTime int64
 		if modTime, err = ParseFileLastModTime(source); err != nil {
 			return
 		}
-		if modTime > r {
-			r = modTime
+		if modTime > this.modTime {
+			this.modTime = modTime
 		}
 	}
-	return
+	return this.modTime, nil
 }
 
 func (this *TomlParser) parseSource(opts *options.Options) (r []string, err error) {
 	r = []string{}
 	r = append(r, opts.Sources...)
 
-	for _, source := range r {
-		t := &TomlImport{}
-		if err = this.decode(t, source); err != nil {
-			return
-		}
-		for _, v := range t.Import {
-			r = append(r, path.Join(path.Dir(source), v+".toml"))
-		}
+	t := &TomlImport{}
+	dir, _ := path.Split(opts.Sources[0])
+
+	if err = this.decode(t, opts.Sources[0]); err != nil {
+		return
+	}
+
+	for _, v := range t.Import {
+		r = append(r, fmt.Sprintf("%s%s.toml", dir, v))
 	}
 	return
 }
@@ -76,9 +81,11 @@ func (this *TomlParser) decode(cfg interface{}, source string) (err error) {
 		err = fmt.Errorf("config source not specified")
 		return
 	}
-	if _, err = toml.DecodeFile(source, cfg); err != nil {
-		err = fmt.Errorf("config source decode fail, %s", err)
-		return
+
+	if IsLocalFile(source) == true {
+		if _, err = toml.DecodeFile(source, cfg); err != nil {
+			err = fmt.Errorf("local config source decode fail, %s", err)
+		}
 	}
 	return
 }

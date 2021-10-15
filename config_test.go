@@ -17,50 +17,12 @@ import (
 	"github.com/ant-libs-go/config/parser"
 )
 
-const TEST_PARSER = "toml_apollo" // toml / toml_apollo
-
-func TestMain(m *testing.M) {
-	switch TEST_PARSER {
-	case "toml":
-		NewConfig(parser.NewTomlParser(),
-			options.WithCfgSource("./test/toml_test.toml"),
-			options.WithCheckInterval(10),
-			options.WithOnChangeFn(func(cfg interface{}) {
-				fmt.Println("change.....")
-				switch v := cfg.(type) {
-				case *RedisConfig:
-					fmt.Println("change redis: ", v.Cfgs["default"])
-				case *MysqlConfig:
-					fmt.Println("change mysql: ", v.Cfgs["default"])
-				}
-			}),
-			options.WithOnErrorFn(func(e error) {
-				fmt.Println("error: ", e)
-			}))
-	case "toml_apollo":
-		NewConfig(parser.NewTomlApolloParser(),
-			options.WithCfgSource("./test/toml_apollo_test.toml"),
-			options.WithCheckInterval(10),
-			options.WithOnChangeFn(func(cfg interface{}) {
-				fmt.Println("change.....")
-				switch v := cfg.(type) {
-				case *RedisConfig:
-					fmt.Println("change redis: ", v.Cfgs["default"])
-				case *MysqlConfig:
-					fmt.Println("change mysql: ", v.Cfgs["default"])
-				}
-			}),
-			options.WithOnErrorFn(func(e error) {
-				fmt.Println("error: ", e)
-			}))
-	}
-	os.Exit(m.Run())
-}
+const TEST_PARSER = "toml_nacos" // toml、 toml_apollo、toml_nacos
 
 type RedisConfig struct {
 	Cfgs map[string]*struct {
-		DialAddr     string `toml:"addr"`
-		DialUsername string `toml:"user"`
+		DialAddr string `toml:"addr"`
+		DialPawd string `toml:"pawd"`
 	} `toml:"redis"`
 }
 
@@ -74,12 +36,55 @@ type MysqlConfig struct {
 	} `toml:"mysql"`
 }
 
+func TestMain(m *testing.M) {
+	var p parser.Parser
+	var source string
+
+	switch TEST_PARSER {
+	case "toml":
+		p = parser.NewTomlParser()
+		source = "./test/toml_test.toml"
+	case "toml_apollo":
+		p = parser.NewTomlApolloParser()
+		source = "./test/toml_apollo_test.toml"
+	case "toml_nacos":
+		p = parser.NewTomlNacosParser()
+		source = "./test/toml_nacos_test.toml"
+	}
+
+	NewConfig(p,
+		options.WithCfgSource(source),
+		options.WithCheckInterval(10),
+		options.WithOnChangeFn(func(cfg interface{}) {
+			switch v := cfg.(type) {
+			case *RedisConfig:
+				fmt.Println("global change redis: ", v.Cfgs["stats"], v.Cfgs["uaap"])
+			case *MysqlConfig:
+				fmt.Println("global change mysql: ", v.Cfgs["default"])
+			default:
+				fmt.Println("global change: ", v)
+			}
+		}),
+		options.WithOnErrorFn(func(e error) {
+			fmt.Println("error: ", e)
+		}))
+
+	os.Exit(m.Run())
+}
+
 func TestBasic(t *testing.T) {
-	cfg := &RedisConfig{}
-	fmt.Println("redis: ", Get(cfg, options.WithOpOnChangeFn(func(cfg interface{}) {
-		fmt.Println("------change")
-		fmt.Println(cfg)
-	})).(*RedisConfig).Cfgs["default"])
-	fmt.Println("mysql: ", Get(&MysqlConfig{}).(*MysqlConfig).Cfgs["default"])
+	redisCfg := &RedisConfig{}
+	mysqlCfg := &MysqlConfig{}
+
+	fmt.Println("redis: ", Get(redisCfg, options.WithOpOnChangeFn(func(redisCfg interface{}) {
+		fmt.Println("private change redis : ", redisCfg)
+	})).(*RedisConfig).Cfgs["stats"])
+
+	fmt.Println("redis: ", Get(redisCfg, options.WithOpOnChangeFn(func(redisCfg interface{}) {
+		fmt.Println("private change redis : ", redisCfg)
+	})).(*RedisConfig).Cfgs["uaap"])
+
+	fmt.Println("mysql: ", Get(mysqlCfg).(*MysqlConfig).Cfgs["default"])
+
 	time.Sleep(1 * time.Hour)
 }

@@ -18,16 +18,18 @@ import (
 	"github.com/philchia/agollo/v4"
 )
 
-type TomlApolloEntrance struct {
+type TomlApolloConfig struct {
 	AppId    string `toml:"app_id"`
 	CacheDir string `toml:"cache_dir"`
 	MetaAddr string `toml:"meta_addr"`
 }
 
 type TomlApolloParser struct {
-	agolloNewOnce       sync.Once
-	agolloSubscribeOnce sync.Once
-	modTime             int64
+	initOnce   sync.Once
+	listenOnce sync.Once
+
+	modTime  int64
+	entrance *TomlApolloConfig
 }
 
 func NewTomlApolloParser() *TomlApolloParser {
@@ -36,19 +38,19 @@ func NewTomlApolloParser() *TomlApolloParser {
 }
 
 func (this *TomlApolloParser) Unmarshal(cfg interface{}, opts *options.Options) (err error) {
-	this.agolloNewOnce.Do(func() {
-		t := &TomlApolloEntrance{}
+	this.initOnce.Do(func() {
+		this.entrance = &TomlApolloConfig{}
 		if len(opts.Sources) == 0 {
 			err = fmt.Errorf("config source not specified")
 		}
 		if err == nil {
-			_, err = toml.DecodeFile(opts.Sources[0], t)
+			_, err = toml.DecodeFile(opts.Sources[0], this.entrance)
 		}
 		if err == nil {
-			err = agollo.Start(&agollo.Conf{AppID: t.AppId, CacheDir: t.CacheDir, MetaAddr: t.MetaAddr})
-		}
-		if err == nil {
-			agollo.OnUpdate(func(e *agollo.ChangeEvent) { this.modTime = time.Now().Unix() })
+			err = agollo.Start(&agollo.Conf{
+				AppID:    this.entrance.AppId,
+				CacheDir: this.entrance.CacheDir,
+				MetaAddr: this.entrance.MetaAddr})
 		}
 	})
 
@@ -61,14 +63,17 @@ func (this *TomlApolloParser) Unmarshal(cfg interface{}, opts *options.Options) 
 		return
 	}
 
-	this.agolloSubscribeOnce.Do(func() {
+	this.listenOnce.Do(func() {
+		agollo.OnUpdate(func(e *agollo.ChangeEvent) { this.modTime = time.Now().Unix() })
+
 		for _, source := range sources {
-			if this.isLocalFile(source) == true {
+			if IsLocalFile(source) == true {
 				continue
 			}
 			agollo.SubscribeToNamespaces(strings.TrimSpace(source))
 		}
 	})
+
 	for _, source := range sources {
 		if err = this.decode(cfg, source); err != nil {
 			return
@@ -82,8 +87,9 @@ func (this *TomlApolloParser) GetLastModTime(opts *options.Options) (r int64, er
 	if sources, err = this.parseSource(opts); err != nil {
 		return
 	}
+
 	for _, source := range sources {
-		if this.isLocalFile(source) == false {
+		if IsLocalFile(source) == false {
 			continue
 		}
 		var modTime int64
@@ -113,22 +119,23 @@ func (this *TomlApolloParser) decode(cfg interface{}, source string) (err error)
 		return
 	}
 
-	if this.isLocalFile(source) == true {
+	if IsLocalFile(source) == true {
 		if _, err = toml.DecodeFile(source, cfg); err != nil {
 			err = fmt.Errorf("local config source decode fail, %s", err)
-			return
 		}
-	}
-
-	if _, err = toml.Decode(agollo.GetContent(agollo.WithNamespace(source)), cfg); err != nil {
-		err = fmt.Errorf("apollo config source decode fail, %s", err)
 		return
 	}
-	return
-}
 
-func (this *TomlApolloParser) isLocalFile(source string) bool {
-	return strings.HasPrefix(source, ".") || strings.HasPrefix(source, "/")
+	var str string
+	if err == nil {
+		str = agollo.GetContent(agollo.WithNamespace(source))
+	}
+	if err == nil {
+		if _, err = toml.Decode(str, cfg); err != nil {
+			err = fmt.Errorf("apollo config source decode fail, %s", err)
+		}
+	}
+	return
 }
 
 // vim: set noexpandtab ts=4 sts=4 sw=4 :

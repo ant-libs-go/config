@@ -6,6 +6,6 @@ import = ["toml_test_sub"]
     host = "127.0.0.1"
     port = "3306"
     name = "business"
-[redis.default]
+[redis.stats]
     addr = "127.0.0.1:6379"
     pawd = "123456"

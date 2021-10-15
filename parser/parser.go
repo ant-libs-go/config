@@ -10,6 +10,7 @@ package parser
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/ant-libs-go/config/options"
 )
@@ -27,6 +28,14 @@ func ParseFileLastModTime(file string) (r int64, err error) {
 	}
 	r = fd.ModTime().Unix()
 	return
+}
+
+func IsLocalFile(file string) bool {
+	return strings.HasPrefix(file, ".") || strings.HasPrefix(file, "/")
+}
+
+type TomlImport struct {
+	Import []string
 }
 
 // vim: set noexpandtab ts=4 sts=4 sw=4 :

@@ -80,7 +80,7 @@ func (this *Config) changeChecker() {
 
 			oldHash := one.hash
 
-			b, _ := util.GobEncode(one.m)
+			b, _ := util.JsonEncode(one.m)
 			this.items[pointer].m = one.m
 			this.items[pointer].hash = util.Md5String(string(b))
 			this.items[pointer].elem = reflect.ValueOf(one.m).Elem()
@@ -128,7 +128,7 @@ func Get(cfg interface{}, opts ...options.OpOption) interface{} {
 			return nil
 		}
 
-		b, _ := util.GobEncode(cfg)
+		b, _ := util.JsonEncode(cfg)
 		Instance.items[pointer].m = cfg
 		Instance.items[pointer].hash = util.Md5String(string(b))
 		Instance.items[pointer].elem = reflect.ValueOf(cfg).Elem()
