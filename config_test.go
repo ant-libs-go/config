@@ -17,7 +17,7 @@ import (
 	"github.com/ant-libs-go/config/parser"
 )
 
-const TEST_PARSER = "toml_nacos" // toml、 toml_apollo、toml_nacos
+const TEST_PARSER = "toml" // toml、 toml_apollo、toml_nacos
 
 type RedisConfig struct {
 	Cfgs map[string]*struct {

@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/ant-libs-go/util v0.1.60
+	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/nacos-group/nacos-sdk-go v1.0.9
 	github.com/philchia/agollo/v4 v4.1.3
