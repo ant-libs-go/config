@@ -10,6 +10,7 @@ package parser
 import (
 	"fmt"
 	"net"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -61,6 +62,7 @@ func (this *TomlNacosParser) Unmarshal(cfg interface{}, opts *options.Options) (
 			host, port, err = net.SplitHostPort(this.entrance.MetaAddr)
 		}
 		if err == nil {
+			pwd, _ := os.Getwd()
 			this.cli, err = clients.NewConfigClient(vo.NacosClientParam{
 				ServerConfigs: []constant.ServerConfig{
 					*constant.NewServerConfig(host, uint64(util.StrToInt64(port, 80)))},
@@ -68,8 +70,8 @@ func (this *TomlNacosParser) Unmarshal(cfg interface{}, opts *options.Options) (
 					constant.WithTimeoutMs(5000),
 					constant.WithNamespaceId(this.entrance.NamespaceId),
 					constant.WithNotLoadCacheAtStart(true),
-					constant.WithCacheDir(this.entrance.CacheDir),
-					constant.WithLogDir(this.entrance.LogDir),
+					constant.WithCacheDir(util.AbsPath(this.entrance.CacheDir, pwd)),
+					constant.WithLogDir(util.AbsPath(this.entrance.LogDir, pwd)),
 					constant.WithLogLevel(this.entrance.LogLevel)),
 			})
 		}

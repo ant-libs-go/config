@@ -1,7 +1,7 @@
 app_id = "SampleApp"
 group_id = "Sample"
 cache_dir = "./runtime"
-namespace_id = "878221ad-942e-404b-8229-6ae7bd126569"
+namespace_id = "d55f9af8-55a7-401a-9968-951623a3d59c"
 meta_addr = "192.168.0.230:8848"
 log_level = "info"
 log_dir = "./runtime/logs"
