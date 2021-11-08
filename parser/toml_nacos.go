@@ -131,7 +131,6 @@ func (this *TomlNacosParser) GetLastModTime(opts *options.Options) (r int64, err
 func (this *TomlNacosParser) parseSource(opts *options.Options) (r []string, err error) {
 	r = []string{}
 	r = append(r, opts.Sources...)
-	r = append(r, this.entrance.AppId)
 
 	var str string
 	t := &TomlImport{}
@@ -147,6 +146,7 @@ func (this *TomlNacosParser) parseSource(opts *options.Options) (r []string, err
 	for _, v := range t.Import {
 		r = append(r, strings.TrimSpace(v))
 	}
+	r = append(r, this.entrance.AppId)
 	return
 }
 
