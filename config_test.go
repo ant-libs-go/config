@@ -17,30 +17,52 @@ import (
 	"github.com/ant-libs-go/config/parser"
 )
 
-const TEST_PARSER = "toml" // toml、 toml_apollo、toml_nacos
+const TEST_PARSER = "mem" // mem、toml、 toml_apollo、toml_nacos
+
+type RedisCfg struct {
+	DialAddr string `toml:"addr"`
+	DialPawd string `toml:"pawd"`
+}
 
 type RedisConfig struct {
-	Cfgs map[string]*struct {
-		DialAddr string `toml:"addr"`
-		DialPawd string `toml:"pawd"`
-	} `toml:"redis"`
+	Cfgs map[string]*RedisCfg `toml:"redis" antcfg:"redis"`
+}
+
+type MysqlCfg struct {
+	DialUser string `toml:"user"`
+	DialPawd string `toml:"pawd"`
+	DialHost string `toml:"host"`
+	DialPort string `toml:"port"`
+	DialName string `toml:"name"`
 }
 
 type MysqlConfig struct {
-	Cfgs map[string]*struct {
-		DialUser string `toml:"user"`
-		DialPawd string `toml:"pawd"`
-		DialHost string `toml:"host"`
-		DialPort string `toml:"port"`
-		DialName string `toml:"name"`
-	} `toml:"mysql"`
+	Cfgs map[string]*MysqlCfg `toml:"mysql" antcfg:"mysql"`
 }
 
 func TestMain(m *testing.M) {
 	var p parser.Parser
 	var source string
+	var mem interface{}
 
 	switch TEST_PARSER {
+	case "mem":
+		p = parser.NewMemParser()
+		mem = &struct {
+			Name  string
+			Redis map[string]*RedisCfg `antcfg:"redis"`
+			Mysql map[string]*MysqlCfg `antcfg:"mysql"`
+		}{
+			Name: "app1",
+			Redis: map[string]*RedisCfg{
+				"stats": {DialAddr: "rd1addr", DialPawd: "rd1pawd"},
+				"uaap":  {DialAddr: "rd2addr", DialPawd: "rd2pawd"},
+			},
+			Mysql: map[string]*MysqlCfg{
+				"default": {DialUser: "md1addr", DialPawd: "md1pawd"},
+				"md2":     {DialUser: "md2addr", DialPawd: "md2pawd"},
+			},
+		}
 	case "toml":
 		p = parser.NewTomlParser()
 		source = "./test/toml_test.toml"
@@ -54,6 +76,7 @@ func TestMain(m *testing.M) {
 
 	NewConfig(p,
 		options.WithCfgSource(source),
+		options.WithMemoryVariable(mem),
 		options.WithCheckInterval(10),
 		options.WithOnChangeFn(func(cfg interface{}) {
 			switch v := cfg.(type) {
