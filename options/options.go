@@ -8,10 +8,11 @@
 package options
 
 type Options struct {
-	Sources       []string          // config source
-	CheckInterval int64             // file update check interval
-	OnChangeFn    func(interface{}) // call it when the file is modified
-	OnErrorFn     func(error)       // call it when an error occurs
+	Sources        []string          // config source
+	MemoryVariable interface{}       // memory reference data
+	CheckInterval  int64             // file update check interval
+	OnChangeFn     func(interface{}) // call it when the file is modified
+	OnErrorFn      func(error)       // call it when an error occurs
 }
 
 type Option func(o *Options)
@@ -22,6 +23,13 @@ func WithCfgSource(inp ...string) Option {
 			o.Sources = []string{}
 		}
 		o.Sources = append(o.Sources, inp...)
+	}
+}
+
+// this is valid only if the parser is MemParser
+func WithMemoryVariable(inp interface{}) Option {
+	return func(o *Options) {
+		o.MemoryVariable = inp
 	}
 }
 
