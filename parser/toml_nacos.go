@@ -28,6 +28,8 @@ type TomlNacosConfig struct {
 	AppId       string `toml:"app_id"`
 	GroupId     string `toml:"group_id"`
 	NamespaceId string `toml:"namespace_id"`
+	AccessKey   string `toml:"access_key"`
+	SecretKey   string `toml:"secret_key"`
 	CacheDir    string `toml:"cache_dir"`
 	LogDir      string `toml:"log_dir"`
 	LogLevel    string `toml:"log_level"` // debug, info, warn, error
@@ -65,14 +67,18 @@ func (this *TomlNacosParser) Unmarshal(cfg interface{}, opts *options.Options) (
 			pwd, _ := os.Getwd()
 			this.cli, err = clients.NewConfigClient(vo.NacosClientParam{
 				ServerConfigs: []constant.ServerConfig{
-					*constant.NewServerConfig(host, uint64(util.StrToInt64(port, 80)))},
+					*constant.NewServerConfig(host, uint64(util.StrToInt64(port, 80))),
+				},
 				ClientConfig: constant.NewClientConfig(
 					constant.WithTimeoutMs(5000),
 					constant.WithNamespaceId(this.entrance.NamespaceId),
 					constant.WithNotLoadCacheAtStart(true),
 					constant.WithCacheDir(util.AbsPath(this.entrance.CacheDir, pwd)),
 					constant.WithLogDir(util.AbsPath(this.entrance.LogDir, pwd)),
-					constant.WithLogLevel(this.entrance.LogLevel)),
+					constant.WithLogLevel(this.entrance.LogLevel),
+					constant.WithAccessKey(this.entrance.AccessKey),
+					constant.WithSecretKey(this.entrance.SecretKey),
+				),
 			})
 		}
 	})
