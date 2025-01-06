@@ -25,6 +25,7 @@ import (
 )
 
 type TomlNacosConfig struct {
+	Addr        string `toml:"addr"`
 	AppId       string `toml:"app_id"`
 	GroupId     string `toml:"group_id"`
 	NamespaceId string `toml:"namespace_id"`
@@ -33,7 +34,6 @@ type TomlNacosConfig struct {
 	CacheDir    string `toml:"cache_dir"`
 	LogDir      string `toml:"log_dir"`
 	LogLevel    string `toml:"log_level"` // debug, info, warn, error
-	MetaAddr    string `toml:"meta_addr"`
 }
 
 type TomlNacosParser struct {
@@ -61,7 +61,7 @@ func (this *TomlNacosParser) Unmarshal(cfg interface{}, opts *options.Options) (
 			_, err = toml.DecodeFile(opts.Sources[0], this.entrance)
 		}
 		if err == nil {
-			host, port, err = net.SplitHostPort(this.entrance.MetaAddr)
+			host, port, err = net.SplitHostPort(this.entrance.Addr)
 		}
 		if err == nil {
 			pwd, _ := os.Getwd()
