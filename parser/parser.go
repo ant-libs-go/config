@@ -10,7 +10,6 @@ package parser
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/ant-libs-go/config/options"
 )
@@ -31,7 +30,9 @@ func ParseFileLastModTime(file string) (r int64, err error) {
 }
 
 func IsLocalFile(file string) bool {
-	return strings.HasPrefix(file, ".") || strings.HasPrefix(file, "/")
+	//return strings.HasPrefix(file, ".") || strings.HasPrefix(file, "/")
+	_, err := os.Stat(file)
+	return os.IsNotExist(err) == false
 }
 
 type TomlImport struct {
