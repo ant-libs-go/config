@@ -86,7 +86,10 @@ func (this *TomlParser) decode(cfg interface{}, source string) (err error) {
 		if _, err = toml.DecodeFile(source, cfg); err != nil {
 			err = fmt.Errorf("local config source decode fail, %s", err)
 		}
+		return
 	}
+
+	err = fmt.Errorf("local config source[%s] not found", source)
 	return
 }
 
