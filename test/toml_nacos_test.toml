@@ -1,5 +1,5 @@
 addr = "192.168.0.230:8848"
-app_id = "SampleApp"
+data_id = "app.toml"
 group_id = "Sample"
 namespace_id = "d55f9af8-55a7-401a-9968-951623a3d59c"
 cache_dir = "./runtime"

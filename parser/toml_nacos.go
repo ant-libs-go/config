@@ -26,7 +26,7 @@ import (
 
 type TomlNacosConfig struct {
 	Addr        string `toml:"addr"`
-	AppId       string `toml:"app_id"`
+	DataId      string `toml:"data_id"`
 	GroupId     string `toml:"group_id"`
 	NamespaceId string `toml:"namespace_id"`
 	AccessKey   string `toml:"access_key"`
@@ -141,7 +141,7 @@ func (this *TomlNacosParser) parseSource(opts *options.Options) (r []string, err
 	var str string
 	t := &TomlImport{}
 
-	str, err = this.cli.GetConfig(vo.ConfigParam{DataId: this.entrance.AppId, Group: this.entrance.GroupId})
+	str, err = this.cli.GetConfig(vo.ConfigParam{DataId: this.entrance.DataId, Group: this.entrance.GroupId})
 	if err == nil {
 		_, err = toml.Decode(str, t)
 	}
@@ -152,7 +152,7 @@ func (this *TomlNacosParser) parseSource(opts *options.Options) (r []string, err
 	for _, v := range t.Import {
 		r = append(r, strings.TrimSpace(v))
 	}
-	r = append(r, this.entrance.AppId)
+	r = append(r, this.entrance.DataId)
 	return
 }
 
